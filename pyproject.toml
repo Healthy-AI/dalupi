@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "dalupi"
+version = "0.1.0"
+description = "Unsupervised domain adaptation by learning using privileged information"
+authors = ["Anton Matsson and Adam Breitholtz"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.*"
+tensorflow = "2.11.0"
+torch = "1.12.1"
+torchvision = "0.13.1"
+pycocotools = "2.0.6"
+conda-lock = "2.0.0"
+skorch = "0.11.0"
+pandas = "1.4.2"
+seaborn = "0.12.1"
+ipykernel = "6.13.0"
+scikit-image = "0.19.3"
+gitpython = "3.1.31"
+pyyaml = "6.0"
+amhelpers = "0.4.3"
+adapt = "0.4.2"
+ipywidgets = "7.6.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

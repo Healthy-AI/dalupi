@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#SBATCH -A <ACCOUNT>
+#SBATCH -p alvis
+#SBATCH -N 1
+#SBATCH --gpus-per-node=T4:1
+#SBATCH -t 0-1:0  # days-hours:minutes
+#SBATCH --output=<EXPERIMENT_PATH>/logs/%x_%j.out
+
+experiment='<EXPERIMENT>'
+experiment_path='<EXPERIMENT_PATH>'
+
+if [[ $HOME == *Alvis ]]; then
+  cd ~
+  cp -r dalupi $TMPDIR
+  cd $TMPDIR/dalupi
+
+  module purge
+  source $HOME/dalupi/scripts/slurm_templates/load_modules
+  source $HOME/dalupi/dalupi_env/bin/activate
+else
+  # Depending on your cluster, you might need
+  # to modify the following lines.
+  cd $HOME/dalupi
+  conda activate dalupi_env
+fi
+
+python scripts/collect_results.py --experiment $experiment --experiment_path $experiment_path

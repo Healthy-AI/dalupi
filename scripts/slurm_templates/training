@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#SBATCH -A <ACCOUNT>
+#SBATCH -p alvis
+#SBATCH -N 1
+#SBATCH --gpus-per-node=<GPU>:1
+#SBATCH -t 5-0:0  # days-hours:minutes
+#SBATCH --output=<EXPERIMENT_PATH>/logs/%x_%j.out
+
+experiment_path='<EXPERIMENT_PATH>'
+setting='<SETTING>'
+
+if [ -z $SLURM_ARRAY_TASK_ID ]
+then
+  config_number='001'
+else
+  config_number=$(printf '%03d' $SLURM_ARRAY_TASK_ID)
+fi
+config=${experiment_path}/${setting}_configs/config${config_number}.yaml
+
+if [[ $HOME == *Alvis ]]; then
+  cd ~
+  cp -r dalupi $TMPDIR
+  cd $TMPDIR/dalupi
+
+  module purge
+  source $HOME/dalupi/scripts/slurm_templates/load_modules
+  source $HOME/dalupi/dalupi_env/bin/activate
+else
+  # Depending on your cluster, you might need
+  # to modify the following lines.
+  cd $HOME/dalupi
+  conda activate dalupi_env
+fi
+
+python scripts/train_predict.py --config_path $config --setting $setting

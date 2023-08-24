@@ -1,0 +1,340 @@
+experiment: 'mnist'
+
+seed: &seed 0
+
+image_w: &image_w 128
+image_h: &image_h 128
+image_c: &image_c 3
+
+n_epochs: &n_epochs 100
+batch_size: &batch_size 32
+
+n_classes: &n_classes 5
+
+data:
+  path: /mimer/NOBACKUP/groups/lupida/data/mnist
+  skew: 0.2
+  scale: false
+  valid_size: 0.2  # of train
+  test_size: 0.2
+  seed: *seed
+
+#finetuning:
+#  lr: 1.0e-5  # all learning rates will be set to this value
+#  max_epochs: 20
+#  n_layers: 5
+
+results:
+  path: /mimer/NOBACKUP/groups/lupida/models/mnist
+
+default:
+  module:
+    type: dalupi.models.networks.BaseNetwork
+    is_called: false
+    featurizer:
+      type: dalupi.models.networks.ResNet
+      is_called: false
+    featurizer__version: 18
+    featurizer__grayscale_input: false
+    featurizer__pretrained: false
+    featurizer__n_trainable_layers: 5
+    featurizer__p_dropout: 0
+    task:
+      type: dalupi.models.networks.Task
+      is_called: false
+    task__out_features: *n_classes
+    task__is_nonlinear: true
+  criterion:
+    type: torch.nn.CrossEntropyLoss
+    is_called: false
+    reduction: none
+  optimizer:
+    type: torch.optim.Adam
+    is_called: false
+  optimizer__weight_decay: 0
+  lr: 1.0e-3
+  max_epochs: *n_epochs
+  batch_size: *batch_size
+  iterator_train:
+    shuffle: true
+  dataset: 
+    type: dalupi.data.mnist.BaseDataset
+    is_called: false
+  train_split:
+    type: skorch.dataset.ValidSplit
+    is_called: true
+    cv: 5
+  callbacks:
+  - - 'lr_scheduler'
+    - type: skorch.callbacks.LRScheduler
+      is_called: True
+      policy: StepLR
+      step_size: 1.0e+3
+      gamma: 0.1
+  predict_nonlinearity: auto
+  verbose: 1
+  device:
+    type: dalupi.utils.get_device
+    is_called: true
+  
+source: &source
+  finetune: false
+  model:
+    type: dalupi.models.models.BaseModel
+    is_called: false
+    multilabel: false
+    epoch_scoring: accuracy
+    monitor: 'valid_accuracy_best'
+    load_best: true
+    patience: 10
+    seed: *seed
+
+target: *source
+
+x2w:
+  finetune: false
+  model:
+    type: dalupi.models.models.BaseModel
+    is_called: false
+    multilabel: false
+    epoch_scoring: null
+    monitor: 'valid_loss_best'
+    f_params: 'params_x2w.pt'
+    f_optimizer: 'optimizer_x2w.pt'
+    f_criterion: 'criterion_x2w.pt'
+    f_history: 'history_x2w.json'
+    load_best: true
+    patience: 10
+    seed: *seed
+  module:
+    type: dalupi.models.networks.BaseNetwork
+    is_called: false
+    featurizer:
+      type: dalupi.models.networks.ResNet
+      is_called: false
+    featurizer__version: 18
+    featurizer__grayscale_input: false
+    featurizer__pretrained: false
+    featurizer__n_trainable_layers: 5
+    featurizer__p_dropout: 0
+    task:
+      type: dalupi.models.networks.Task
+      is_called: false
+    task__out_features: 4
+    task__is_nonlinear: false
+  criterion:
+    type: torch.nn.MSELoss
+    is_called: false
+
+w2y:
+  finetune: false
+  model:
+    type: dalupi.models.models.BaseModel
+    is_called: false
+    multilabel: false
+    epoch_scoring: accuracy
+    monitor: 'valid_accuracy_best'
+    f_params: 'params_w2y.pt'
+    f_optimizer: 'optimizer_w2y.pt'
+    f_criterion: 'criterion_w2y.pt'
+    f_history: 'history_w2y.json'
+    load_best: true
+    patience: 10
+    seed: *seed
+  module:
+    type: dalupi.models.networks.BaseNetwork
+    is_called: false
+    featurizer:
+      type: dalupi.models.networks.ConvNet
+      is_called: false
+    task:
+      type: dalupi.models.networks.Identity
+      is_called: false
+
+dann:
+  finetune: false
+  model:
+    type: dalupi.models.models.DANN
+    is_called: false
+    multilabel: false
+    epoch_scoring: 'accuracy'
+    monitor: 'valid_accuracy_best'
+    f_optimizer: null
+    load_best: true
+    patience: 10
+    d_steps_per_g_step: 1
+    grad_penalty: 0
+    theta: 0.1
+    optimizer_generator:
+      type: torch.optim.Adam
+      is_called: false
+    optimizer_generator__weight_decay: 0
+    optimizer_discriminator:
+      type: torch.optim.Adam
+      is_called: false
+    optimizer_discriminator__weight_decay: 0
+    seed: *seed
+  module:
+    type: dalupi.models.networks.DANN
+    is_called: false
+    featurizer: 
+      type: dalupi.models.networks.ResNet
+      is_called: false
+    featurizer__version: 18
+    featurizer__grayscale_input: false
+    featurizer__pretrained: false
+    featurizer__n_trainable_layers: 5
+    featurizer__p_dropout: 0
+    classifier:
+      type: dalupi.models.networks.Task
+      is_called: false
+    classifier__out_features: *n_classes
+    classifier__is_nonlinear: true
+    discriminator:
+      type: dalupi.models.networks.MLP
+      is_called: false
+    discriminator__out_features: 2  # number of domains
+    discriminator__width: 256
+    discriminator__depth: 3
+    discriminator__p_dropout: 0
+  callbacks:
+  - - 'lr_scheduler'
+    - type: dalupi.models.utils.MultiOptimLRScheduler
+      is_called: true
+      policies: StepLR
+      step_size: 1.0e+3
+      gamma: 0.1
+    
+adapt_dann:
+  finetune: false
+  model:
+    type: adapt.feature_based.DANN
+    is_called: true
+    encoder: &adapt_encoder
+      type: dalupi.models.networks.get_adapt_encoder
+      is_called: true
+      weights: null
+      n_trainable_layers: 5
+      dropout: 0
+      input_shape:
+      - *image_w
+      - *image_h
+      - *image_c
+    task: &adapt_task
+      type: dalupi.models.networks.get_adapt_task
+      is_called: true
+      in_features: 2048  # the output of the encoder (ResNet-50)
+      out_features: *n_classes
+      is_nonlinear: true
+      dropout: 0
+      out_activation: 'softmax'
+    discriminator: &adapt_discriminator
+      type: dalupi.models.networks.get_adapt_discriminator
+      is_called: true
+      depth: 3
+      width: 256
+      n_domains: 2
+      dropout: 0
+    lambda_:
+      type: tensorflow.Variable
+      is_called: true
+      initial_value: 0.0
+    verbose: 1
+    random_state: *seed
+    optimizer: &adapt_optimizer
+      type: tensorflow.keras.optimizers.Adam
+      is_called: true
+      learning_rate:
+        type: dalupi.models.utils.MyDecay
+        is_called: true
+        mu_0: 1.0e-3
+        alpha: 0
+        max_steps: 10000
+      weight_decay: null
+    loss: &adapt_loss
+      type: tensorflow.keras.losses.CategoricalCrossentropy
+      is_called: true
+      from_logits: true
+    metrics: &adapt_metrics
+      disc:
+      - accuracy
+      task:
+      - accuracy
+    optimizer_enc: &adapt_optimizer_enc
+      type: tensorflow.keras.optimizers.Adam
+      is_called: true
+      learning_rate:
+        type: dalupi.models.utils.MyDecay
+        is_called: true
+        mu_0: 1.0e-3
+        alpha: 0
+        max_steps: 10000
+      weight_decay: null
+    optimizer_disc: &adapt_optimizer_disc
+      type: tensorflow.keras.optimizers.Adam
+      is_called: true
+      learning_rate:
+        type: dalupi.models.utils.MyDecay
+        is_called: true
+        mu_0: 1.0e-3
+        alpha: 0
+        max_steps: 10000
+      weight_decay: null
+    epochs: *n_epochs 
+    batch_size: *batch_size
+    callbacks: &adapt_callbacks
+      early_stopping:
+        type: tensorflow.keras.callbacks.EarlyStopping
+        is_called: true
+        monitor: val_accuracy
+        patience: 10
+      model_checkpoint:
+        type: tensorflow.keras.callbacks.ModelCheckpoint
+        is_called: true
+        filepath: null  # filepath is set internally
+        monitor: val_accuracy
+        verbose: 1
+        save_best_only: true
+        mode: max
+        save_weights_only: false
+      save_training_progress:
+        type: dalupi.models.utils.SaveTrainingProgress
+        is_called: true
+      update_lambda:
+        type: adapt.utils.UpdateLambda
+        is_called: true
+        lambda_init: 0.0
+        lambda_max: 0.1
+        gamma: 1.0
+        max_steps: 10000
+
+adapt_mdd:
+  finetune: false
+  model:
+    type: adapt.feature_based.MDD
+    is_called: true
+    encoder: *adapt_encoder
+    task:
+      type: dalupi.models.networks.get_adapt_task_norm
+      is_called: true
+      in_features: 2048  # the output of the encoder (ResNet-50)
+      out_features: *n_classes
+      is_nonlinear: true
+      dropout: 0
+      max_norm: 0.5
+      out_activation: 'softmax'
+    lambda_:
+      type: tensorflow.Variable
+      is_called: true
+      initial_value: 0.0
+    gamma: 3.0
+    verbose: 1
+    random_state: *seed
+    optimizer: *adapt_optimizer
+    loss: *adapt_loss
+    metrics: *adapt_metrics
+    optimizer_enc: *adapt_optimizer_enc
+    optimizer_disc: *adapt_optimizer_disc
+    epochs: *n_epochs
+    batch_size: *batch_size
+    callbacks: *adapt_callbacks

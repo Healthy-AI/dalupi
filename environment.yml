@@ -1,0 +1,18 @@
+name: dalupi_env
+
+channels:
+- pytorch
+- conda-forge
+- nodefaults
+
+dependencies:
+- python=3.10.*
+- mamba
+- pip
+- poetry=1.*
+- tensorflow=2.11.0
+- pytorch::pytorch=1.12.1
+- pytorch::torchvision=0.13.1
+- pip:
+  # Installation with Poetry fails
+  - pycocotools==2.0.6
