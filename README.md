@@ -140,6 +140,7 @@ $ module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0 \
 > IPython/8.5.0-GCCcore-11.3.0
 $ virtualenv --system-site-packages dalupi_env
 $ source dalupi_env/bin/activate
+$ pip install --no-cache-dir --no-build-isolation setuptools==68.0.0
 $ pip install --no-cache-dir --no-build-isolation \
 > gitpython==3.1.31 adapt==0.4.2 skorch==0.11.0 amhelpers==0.4.3 \
 > conda-lock==2.0.0 pycocotools==2.0.6 scikit-image==0.19.3
@@ -167,11 +168,12 @@ $ srun -A <ACCOUNT> -N 1 --gpus-per-node=<GPU>:1 -t 180 --pty jupyter notebook
 
 If you use this work, please cite it as follows:
 ```bib
-@article{breitholtz2023dalupi,
-  title={Unsupervised domain adaptation by learning using privileged information},
-  author={Breitholtz, Adam and Matsson, Anton and Johansson, Fredrik D},
-  journal={arXiv preprint arXiv:2303.09350},
-  year={2023}
+@article{breitholtz2024dalupi,
+  title={Unsupervised Domain Adaptation by Learning Using Privileged Information},
+  author={Adam Breitholtz and Anton Matsson and Fredrik D. Johansson},
+  journal={Transactions on Machine Learning Research},
+  issn={2835-8856},
+  year={2024},
 }
 ```
 
