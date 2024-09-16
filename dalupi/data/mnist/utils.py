@@ -54,7 +54,7 @@ def split_adapt_data(Xs, Xt, ys, test_size, seed):
 
     return X_train, ys_train, Xs_test, ys_test
 
-def get_train_data(config, setting, **kwargs):
+def get_mnist_train_data(config, setting, **kwargs):
     x_source, y_source, x_target, y_target = load_or_make_dataset(config)
 
     w_source = [y[0] for y in y_source]
@@ -118,7 +118,7 @@ def get_train_data(config, setting, **kwargs):
         
     return X, y
 
-def get_eval_data(config, setting, subset, prediction_domain, get_split_datasets):
+def get_mnist_eval_data(config, setting, subset, prediction_domain, get_split_datasets):
     assert subset in ['valid', 'test']
 
     x_source, y_source, x_target, y_target = load_or_make_dataset(config)

@@ -15,6 +15,7 @@ from PIL import Image
 from functools import partial
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.applications.resnet50 import preprocess_input
+from sklearn.preprocessing import LabelBinarizer, MultiLabelBinarizer
 
 def create_dataset_from_config(config, *args):
     '''
@@ -126,6 +127,28 @@ def format_adapt_data(X, y, config, train=True):
             return Xs_train, ys_train, Xt_train, (Xs_val, ys_val)
         
         else:
+            return X, y
+
+    elif experiment == 'celeb':
+        lb = MultiLabelBinarizer()
+        lb.fit([[0, 1], [0, 0]])
+
+        if train:
+            Xs_train = np.array(X[0]).transpose(0, 2, 3, 1)
+            Xt_train = np.array(X[1]).transpose(0, 2, 3, 1)
+            Xs_val = np.array(X[2]).transpose(0, 2, 3, 1)
+
+            ys_train = np.array(y[0]).reshape(-1, 1)
+            ys_train = lb.transform(ys_train)
+
+            ys_val = np.array(y[1]).reshape(-1, 1)
+            ys_val = lb.transform(ys_val)
+
+            return Xs_train, ys_train, Xt_train, (Xs_val, ys_val)
+
+        else:
+            X = np.array(X).transpose(0, 2, 3, 1)
+            y = np.array(y).reshape(-1, 1)
             return X, y
 
 def check_get_data_arguments(subset, setting, valid_domain, prediction_domain):

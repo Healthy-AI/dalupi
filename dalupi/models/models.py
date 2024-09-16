@@ -11,7 +11,7 @@ import skorch.callbacks as cbs
 from functools import partial
 from pathlib import Path
 from sklearn import metrics
-from skorch.dataset import unpack_data
+from skorch.dataset import unpack_data, get_len
 from amhelpers.amhelpers import create_object_from_dict
 from amhelpers.config_parsing import get_net_params, _check_value
 from dalupi.models.utils import save_training_progress_fig
@@ -199,6 +199,31 @@ class BaseModel(skorch.net.NeuralNet):
             ('valid_loss', cbs.PassthroughScoring(name='valid_loss')),
             ('print_log', cbs.PrintLog('classes_'))
         ]
+
+    def get_split_datasets(self, X, y, X_valid=None, y_valid=None, **fit_params):
+        if X_valid is not None:
+            dataset_train = self.get_dataset(X, y)
+            dataset_valid = self.get_dataset(X_valid, y_valid)
+            return dataset_train, dataset_valid
+        return super().get_split_datasets(X, y, **fit_params)
+    
+    # Catch `fit_params` here and do not pass it on to the step function.
+    def run_single_epoch(self, dataset, training, prefix, step_fn, **fit_params):
+        if dataset is None:
+            return
+
+        batch_count = 0
+        for batch in self.get_iterator(dataset, training=training):
+            self.notify('on_batch_begin', batch=batch, training=training)
+            step = step_fn(batch)
+            self.history.record_batch(prefix + '_loss', step['loss'].item())
+            batch_size = (get_len(batch[0]) if isinstance(batch, (tuple, list))
+                          else get_len(batch))
+            self.history.record_batch(prefix + '_batch_size', batch_size)
+            self.notify('on_batch_end', batch=batch, training=training, **step)
+            batch_count += 1
+        
+        self.history.record(prefix + '_batch_count', batch_count)
 
     def on_epoch_begin(self, net, dataset_train=None, dataset_valid=None, **kwargs):
         self.history.new_epoch()

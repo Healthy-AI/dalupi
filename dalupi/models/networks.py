@@ -157,6 +157,9 @@ class ResNet(torch.nn.Module):
 class MLP(torch.nn.Module):
     def __init__(self, in_features, out_features, width, depth, p_dropout=0):
         super(MLP, self).__init__()
+
+        self.out_features = out_features
+
         self.input_layer = torch.nn.Linear(in_features, width)
         self.hidden_layers = torch.nn.ModuleList(
             [torch.nn.Linear(width, width) for _ in range(depth - 2)]

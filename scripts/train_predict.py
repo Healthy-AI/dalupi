@@ -44,11 +44,13 @@ if __name__ == '__main__':
         
         pipeline.cleanup()
     
-    elif experiment== 'mnist':
+    elif experiment == 'mnist' or experiment == 'celeb':
         if args.predict_only:
             model = None
         else:
             model = train_model(config, setting)
+            #if config[setting]['finetune']:
+            #    model = train_model(config, setting, finetune=True)
         
         valid_domain = 'target' if setting == 'target' else 'source'
 

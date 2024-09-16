@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     if args.experiment == 'chestxray' or args.experiment == 'coco':
         metric = 'auc_average'
-    elif args.experiment == 'mnist':
+    elif args.experiment == 'mnist' or args.experiment == 'celeb':
         metric = 'accuracy_average'
     
     sorter = partial(score_sorter, metric)

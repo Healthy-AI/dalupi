@@ -2,7 +2,9 @@
 
 Unsupervised domain adaptation is guaranteed to be successful only under strong assumptions such as covariate shift and overlap between source and target domains. The assumption of overlap is often violated in high-dimensional applications such as image classification. In this work, we show that access to side information about examples from the input domains can help relax said assumptions and increase sample efficiency in learning. We call this setting domain adaptation by learning using privileged information (DALUPI). The figure below illustrates several applications with the DALUPI structure.
 
-This repository contains code to run the experiments in [our paper](https://arxiv.org/pdf/2303.09350.pdf). We refer to the multi-class digit classification task as the MNIST experiment. The multi-label entity and chest X-ray classification tasks are referred to as the COCO experiment and the chest X-ray experiment, respectively. If you have any questions, please contact [Anton Matsson](https://www.chalmers.se/personer/antmats/) or [Adam Breitholtz](https://www.chalmers.se/personer/adambre/).
+This repository contains the code used to run the experiments in [our paper](https://openreview.net/forum?id=saV3MPH0kw), published in _Transactions on Machine Learning Research_ in September 2024. We refer to the celebrity photo classification task as the CELEB experiment. The digit classification task is referred to as the MNIST experiment. The entity and chest X-ray classification tasks are referred to as the COCO experiment and the chest X-ray experiment, respectively.
+
+If you have any questions, please contact [Anton Matsson](https://www.chalmers.se/personer/antmats/) or [Adam Breitholtz](https://www.chalmers.se/personer/adambre/).
 
 ![DALUPI](dalupi_examples.png)
 
@@ -20,11 +22,15 @@ $ poetry install
 
 ## Configuration files
 
-For each experiment, there is a config file in [`configs`](configs) which contains, e.g., data-related paths and default hyperparameters for each model. In [`search_configs`](search_configs), there are also so-called search config files which contain the parameters that are swept over (e.g., skewness in the MNIST experiment) and the parameter grids to sample hyperparameters from. In order to reproduce the experiments, the configs should only be modified by changing the paths to the data as described below and the results folder. Note that DALUPI based on Faster R-CNN cannot be trained fully deterministically, so the results may vary slightly between different runs.
+For each experiment, there is a config file in [`configs`](configs) which contains, e.g., data-related paths and default hyperparameters for each model. In [`search_configs`](search_configs), there are search config files which specify the parameters to be swept over (e.g., skewness in the MNIST experiment) and the parameter grids for sampling hyperparameters. In order to reproduce the experiments, you should only modify the configs to update the data paths, as described below, and the path to the results folder. Note that DALUPI, when based on Faster R-CNN, cannot be trained fully deterministically, so the results may vary slightly between runs.
 
 ## Data
 
 To prepare the datasets used in the experiments, run [`scripts/make_data.py`](scripts/make_data.py) with each of the config files as input. This step is also performed when [running an experiment](section-4). Before the datasets can be made, the raw data used in each experiment must be downloaded as described below.
+
+### CELEB
+
+Data for the CELEB experiment can be downloaded from [here](https://worksheets.codalab.org/bundles/0xc41b9d26548541e7ad2d2cfbc2c11c73).
 
 ### MNIST
 
@@ -50,13 +56,24 @@ Source domain data for the chest X-ray experiment can be downloaded from [here](
 
 The experiments can be run with SLURM using [`scripts/run_experiment.py`](scripts/run_experiment.py) as described below. Running an experiment creates an experiment folder in the specified results folder and starts a preprocessing job, a set of main jobs, and a postprocessing job. In the preprocessing job, the dataset required for the experiment is created. In the main jobs, models are trained and evaluated. In the postprocessing job, the best models are identified, and the results are compiled into a file `scores.csv`, which is saved to the experiment folder. There is a SLURM template script for each of these steps in [`scripts/slurm_templates`](scripts/slurm_templates). Depending on your cluster, you may need to change or remove some of the initial SLURM commands in these scripts.
 
+### CELEB
+
+```bash
+$ python scripts/run_experiment.py \
+> --settings source target dalupi adapt_dann adapt_mdd \
+> --config_path configs/celeb.yml \
+> --search_config_path search_configs/celeb.yml \
+> --sweep \
+> --account <SLURM account>
+```
+
 ### MNIST
 
 ```bash
 $ python scripts/run_experiment.py \
 > --settings source target dalupi adapt_dann adapt_mdd \
-> --config_path configs/mnist.yaml \
-> --search_config_path search_configs/mnist.yaml \
+> --config_path configs/mnist.yml \
+> --search_config_path search_configs/mnist.yml \
 > --sweep \
 > --account <SLURM account>
 ```
@@ -66,8 +83,8 @@ $ python scripts/run_experiment.py \
 ```bash
 $ python scripts/run_experiment.py \
 > --settings source target dalupi lupi adapt_dann adapt_mdd \
-> --config_path configs/coco.yaml \
-> --search_config_path search_configs/coco.yaml \
+> --config_path configs/coco.yml \
+> --search_config_path search_configs/coco.yml \
 > --sweep \
 > --account <SLURM account>
 ```
@@ -77,13 +94,13 @@ $ python scripts/run_experiment.py \
 ```bash
 $ python scripts/run_experiment.py \
 > --settings source target dalupi adapt_dann adapt_mdd \
-> --config_path configs/chestxray.yaml \
-> --search_config_path search_configs/chestxray.yaml \
+> --config_path configs/chestxray.yml \
+> --search_config_path search_configs/chestxray.yml \
 > --sweep \
 > --account <SLURM account>
 ```
 
-## Run locally
+## Run experiments locally
 To train and evaluate a single model, use [`scripts/train_predict.py`](scripts/train_predict.py). Running a full experiment is computationally heavy and in practice requires access to multiple GPUs. If you still want to run an experiment on your local machine, run [`scripts/run_experiment.py`](scripts/run_experiment.py) as above but include also the flag `--dry_run`. In this way, an experiment folder containing, e.g., config files for all models that should be trained is created in the specified results folder. Now, run the script below to train all the models in sequence (make sure to specify the path to the newly created experiment folder).
 
 ```bash

@@ -79,3 +79,9 @@ if __name__ == '__main__':
         for skew in [0.2, 0.4, 0.6, 0.8, 1.0]:
             config['data']['skew'] = skew
             load_or_make_dataset(config)
+
+    elif experiment == 'celeb':
+        pass
+
+    else:
+        raise ValueError("Unknown experiment %s." % experiment)
